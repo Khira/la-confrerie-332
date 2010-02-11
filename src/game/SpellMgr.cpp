@@ -1364,6 +1364,10 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                     if(spellInfo_1->SpellIconID == 2606 && spellInfo_2->SpellIconID == 2606)
                         return false;
 
+                    // Kindred Spirits (allow stack for auras)
+                    if (spellInfo_1->SpellIconID == 3559 && spellInfo_2->SpellIconID == 3559)
+                        return false;
+
                     // Brood Affliction: Bronze
                     if( (spellInfo_1->Id == 23170 && spellInfo_2->Id == 23171) ||
                         (spellInfo_2->Id == 23170 && spellInfo_1->Id == 23171) )
@@ -1565,6 +1569,10 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                 // Dispersion
                 if ((spellInfo_1->Id == 47585 && spellInfo_2->Id == 60069) ||
                     (spellInfo_2->Id == 47585 && spellInfo_1->Id == 60069))
+                    return false;
+                // Power Word: Shield and Divine Aegis
+                if ((spellInfo_1->SpellIconID == 566 && spellInfo_2->SpellIconID == 2820) ||
+                    (spellInfo_2->SpellIconID == 566 && spellInfo_1->SpellIconID == 2820))
                     return false;
             }
             break;
