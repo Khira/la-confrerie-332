@@ -869,6 +869,38 @@ bool ChatHandler::HandleReloadMailLevelRewardCommand(const char* /*arg*/)
     return true;
 }
 
+bool ChatHandler::HandleReloadItemTemplateCommand(const char* /*arg*/)
+{
+    sLog.outString( "Re-Loading Item Template ... ");
+    sObjectMgr.LoadItemPrototypes();
+    SendSysMessage("DB table `item_template` reloaded.");
+    return true;
+}
+
+bool ChatHandler::HandleReloadGameObjectTemplateCommand(const char* /*arg*/)
+{
+    sLog.outString( "Re-Loading GameObject Template ... ");
+    sObjectMgr.LoadGameobjectInfo();
+    SendSysMessage("DB table `gameobject_template` reloaded.");
+    return true;
+}
+
+bool ChatHandler::HandleReloadCreatureAddonsCommand(const char* /*arg*/)
+{
+    sLog.outString( "Re-Loading Creature Addon Template ... ");
+    sObjectMgr.LoadCreatureAddons();
+    SendSysMessage("DB table `creature_template_addon` and `creature_addon` reloaded.");
+    return true;
+}
+
+bool ChatHandler::HandleReloadCreatureTemplateCommand(const char* /*arg*/)
+{
+    sLog.outString( "Re-Loading Creature Template ... ");
+    sObjectMgr.LoadCreatureTemplates();
+    SendSysMessage("DB table `creature_template` reloaded.");
+    return true;
+}
+
 bool ChatHandler::HandleReloadSpellDisabledCommand(const char* /*arg*/)
 {
     sLog.outString( "Re-Loading spell disabled table...");
