@@ -480,6 +480,23 @@ bool Master::_StartDB()
         return false;
     }
 
+	// Add Confrerie database - Begin
+	dbstring = sConfig.GetStringDefault("ConfrerieDatabaseInfo", "");
+	if(dbstring.empty())
+	{
+		sLog.outError("Confrerie Database not specified in configuration file");
+		return false;
+	}
+	sLog.outString("Confrerie Database: %s", dbstring.c_str());
+
+	///- Initialise the Confrerie database
+	if(!ConfrerieDatabase.Initialize(dbstring.c_str()))
+	{
+		sLog.outError("Cannot connect to Confrerie database %s",dbstring.c_str());
+		return false;
+	}
+	// Add Confrerie database - End
+
     if(!loginDatabase.CheckRequiredField("realmd_db_version",REVISION_DB_REALMD))
     {
         ///- Wait for already started DB delay threads to end
