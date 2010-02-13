@@ -292,6 +292,28 @@ void WorldSession::LogoutPlayer(bool Save)
 
     if (_player)
     {
+		QueryResult *resultRace = ConfrerieDatabase.PQuery("SELECT spell1, spell2, spell3 FROM player_race WHERE entry=(SELECT morph FROM player_race_relation WHERE guid='%u')", _player->GetGUID());
+		if (resultRace)
+		{
+			Field* fieldsRace = resultRace->Fetch();
+
+			if (_player->HasSpell(fieldsRace[0].GetUInt32()) && fieldsRace[0].GetUInt32()!=0)
+				_player->removeSpell(fieldsRace[0].GetUInt32(),false,false);
+
+			if (_player->HasSpell(fieldsRace[1].GetUInt32()) && fieldsRace[1].GetUInt32()!=0)
+				_player->removeSpell(fieldsRace[1].GetUInt32(),false,false);
+
+			if (_player->HasSpell(fieldsRace[2].GetUInt32()) && fieldsRace[2].GetUInt32()!=0)
+				_player->removeSpell(fieldsRace[2].GetUInt32(),false,false);
+
+			_player->DeMorph();
+			_player->SetSpeed(MOVE_RUN,1,true);
+			_player->SetFloatValue(OBJECT_FIELD_SCALE_X, 1);
+			_player->SetSpeed(MOVE_FLIGHT,1,true);
+			_player->RemoveAllAuras();
+
+			delete resultRace;
+		}
         if (uint64 lguid = GetPlayer()->GetLootGUID())
             DoLootRelease(lguid);
 

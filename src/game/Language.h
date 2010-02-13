@@ -835,6 +835,10 @@ enum MangosStrings
     //                                    10000-10999
 
     // Use for custom patches             11000-11999
+	LANG_MORPH_RACE_NOT_POSSIBLE		= 12000,
+	LANG_MORPH_RACE_HUMAN				= 12001,
+	LANG_MORPH_RACE_HELP				= 12002,
+	LANG_MORPH_RACE_SET					= 12003,
 
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)

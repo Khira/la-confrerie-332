@@ -29,6 +29,8 @@
 #include "revision.h"
 #include "revision_nr.h"
 #include "Util.h"
+#include "SpellAuras.h"
+#include "SpellMgr.h"
 
 bool ChatHandler::HandleHelpCommand(const char* args)
 {
@@ -260,4 +262,172 @@ bool ChatHandler::HandleServerMotdCommand(const char* /*args*/)
 {
     PSendSysMessage(LANG_MOTD_CURRENT, sWorld.GetMotd());
     return true;
+}
+
+bool ChatHandler::HandleMorphCommand(const char* args)
+{
+	if(!m_session->GetPlayer()->isAlive())
+	{
+		SetSentErrorMessage(true);
+		return false;
+	}
+
+	if( !*args )
+	{
+		SendSysMessage(LANG_MORPH_RACE_HELP);
+		SetSentErrorMessage(true);
+		return false;
+	}
+	char* argument1_cache = strtok((char*)args, " ");
+	std::string argument1 = argument1_cache;
+	Player* character = m_session->GetPlayer();
+
+	if (argument1 == "on")
+	{
+		QueryResult *result = ConfrerieDatabase.PQuery("SELECT displayid_m, displayid_w, scale, speed, aura1, aura2, aura3, spell1, spell2, spell3 FROM player_race WHERE entry=(SELECT morph FROM player_race_relation WHERE guid='%u')", character->GetGUID());
+		if (!result) 
+		{
+			SendSysMessage(LANG_MORPH_RACE_NOT_POSSIBLE);
+			SetSentErrorMessage(true);
+			return false; 
+		}
+		Field* fields = result->Fetch();
+		float Scale = fields[2].GetFloat();
+		float Speed = fields[3].GetFloat();
+		uint32 auraID1 = fields[4].GetUInt32();
+		SpellEntry const *spellInfo1 = sSpellStore.LookupEntry( auraID1 );
+		if(spellInfo1)
+		{
+			for(uint32 i = 0;i<3;++i)
+			{
+				uint8 eff1 = spellInfo1->Effect[i];
+				if (eff1>=TOTAL_SPELL_EFFECTS)
+					continue;
+				if( IsAreaAuraEffect(eff1)           ||
+				eff1 == SPELL_EFFECT_APPLY_AURA  ||
+				eff1 == SPELL_EFFECT_PERSISTENT_AREA_AURA )
+				{
+					Aura *Aur1 = CreateAura(spellInfo1, i, NULL, character);
+					character->AddAura(Aur1);
+				}
+			}
+		}
+		uint32 auraID2 = fields[5].GetUInt32();
+		SpellEntry const *spellInfo2 = sSpellStore.LookupEntry( auraID2 );
+		if(spellInfo2)
+		{
+			for(uint32 i = 0;i<3;++i)
+			{
+				uint8 eff2 = spellInfo2->Effect[i];
+				if (eff2>=TOTAL_SPELL_EFFECTS)
+					continue;
+				if( IsAreaAuraEffect(eff2)           ||
+				eff2 == SPELL_EFFECT_APPLY_AURA  ||
+				eff2 == SPELL_EFFECT_PERSISTENT_AREA_AURA )
+				{
+					Aura *Aur2 = CreateAura(spellInfo2, i, NULL, character);
+					character->AddAura(Aur2);
+				}
+			}
+		}
+		uint32 auraID3 = fields[6].GetUInt32();
+		SpellEntry const *spellInfo3 = sSpellStore.LookupEntry( auraID3 );
+		if(spellInfo3)
+		{
+			for(uint32 i = 0;i<3;++i)
+			{
+				uint8 eff3 = spellInfo3->Effect[i];
+				if (eff3>=TOTAL_SPELL_EFFECTS)
+					continue;
+				if( IsAreaAuraEffect(eff3)           ||
+				eff3 == SPELL_EFFECT_APPLY_AURA  ||
+				eff3 == SPELL_EFFECT_PERSISTENT_AREA_AURA )
+				{
+					Aura *Aur3 = CreateAura(spellInfo3, i, NULL, character);
+					character->AddAura(Aur3);
+				}
+			}
+		}
+		if (!(character->HasSpell(fields[7].GetUInt32())) && fields[7].GetUInt32()!=0)
+			character->learnSpell(fields[7].GetUInt32(),false);
+
+		if (!(character->HasSpell(fields[8].GetUInt32())) && fields[8].GetUInt32()!=0)
+			character->learnSpell(fields[8].GetUInt32(),false);
+
+		if (!(character->HasSpell(fields[9].GetUInt32())) && fields[9].GetUInt32()!=0)
+			character->learnSpell(fields[9].GetUInt32(),false); 
+
+		uint16 displayid;
+		if (character->getGender() == GENDER_MALE)
+		{
+			displayid = fields[0].GetUInt32();
+		}
+		else
+		{
+			displayid = fields[1].GetUInt32();
+		}
+		character->SetSpeed(MOVE_RUN,Speed,true);
+		character->SetSpeed(MOVE_FLIGHT,Speed,true);
+		character->SetFloatValue(OBJECT_FIELD_SCALE_X, Scale);
+		character->SetDisplayId(displayid);
+		delete result;
+		return true;
+	}
+
+	if (argument1 == "off")
+	{
+		QueryResult *resultRace = ConfrerieDatabase.PQuery("SELECT aura1, aura2, aura3, spell1, spell2, spell3 FROM player_race WHERE entry=(SELECT morph FROM player_race_relation WHERE guid='%u')", character->GetGUID());
+		if (resultRace)
+		{
+			Field* fieldsRace = resultRace->Fetch();
+
+			if (character->HasSpell(fieldsRace[3].GetUInt32()) && fieldsRace[3].GetUInt32()!=0)
+				character->removeSpell(fieldsRace[3].GetUInt32(),false,false);
+
+			if (character->HasSpell(fieldsRace[4].GetUInt32()) && fieldsRace[3].GetUInt32()!=0)
+				character->removeSpell(fieldsRace[4].GetUInt32(),false,false);
+
+			if (character->HasSpell(fieldsRace[5].GetUInt32()) && fieldsRace[3].GetUInt32()!=0)
+				character->removeSpell(fieldsRace[5].GetUInt32(),false,false);
+
+			if(fieldsRace[0].GetUInt32())
+				character->RemoveAurasDueToSpell(fieldsRace[0].GetUInt32());
+
+			if(fieldsRace[1].GetUInt32())
+				character->RemoveAurasDueToSpell(fieldsRace[1].GetUInt32());
+
+			if(fieldsRace[2].GetUInt32())
+				character->RemoveAurasDueToSpell(fieldsRace[2].GetUInt32());
+		}
+		delete resultRace;
+
+		character->DeMorph();
+		character->SetSpeed(MOVE_RUN,1,true);
+		character->SetSpeed(MOVE_FLIGHT,1,true);
+		character->SetFloatValue(OBJECT_FIELD_SCALE_X, 1);
+		m_session->SendNotification(LANG_MORPH_RACE_HUMAN);
+		return true;
+	}
+
+	if (argument1 == "set" && m_session->GetSecurity()>0)
+	{
+		Player *target = getSelectedPlayer();
+		if (!target)
+		{
+			target = m_session->GetPlayer();
+			if (!target)
+			{
+				return false;
+			}
+		}
+		char* argument2 = strtok((char*)NULL, " ");
+		PSendSysMessage(LANG_MORPH_RACE_SET, target->GetName());
+		ConfrerieDatabase.PExecute("DELETE FROM player_race_relation WHERE guid = '%u'", target->GetGUID());
+		ConfrerieDatabase.PExecute("INSERT INTO player_race_relation (morph, guid) VALUES ('%s', '%u')", argument2, target->GetGUID());
+		return true;
+	}
+
+	SendSysMessage(LANG_MORPH_RACE_HELP);
+	SetSentErrorMessage(true);
+	return false;
 }
