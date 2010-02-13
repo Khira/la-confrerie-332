@@ -117,6 +117,38 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
         }
     }
 
+	QueryResult *result = ConfrerieDatabase.PQuery("SELECT entry_gob, time, retour FROM item_gob_pop WHERE entry_item = '%u'", pItem->GetEntry());
+	if(result)
+	{
+	Field *fields = result->Fetch();
+	uint32 go_id = fields[0].GetUInt32();
+	uint32 time = fields[1].GetUInt32();
+	uint32 retour = fields[2].GetUInt32();
+	GameObject* pGameObj = new GameObject; // Pointer game object
+	float x,y,z; // Definition des valeurs pour les coordonnees
+
+		pUser->GetClosePoint(x,y,z,DEFAULT_WORLD_OBJECT_SIZE); // Recuperation des coordonnees du joueur.
+
+	Map *map = pUser->GetMap(); // La maps ou sera pop le GO
+	/*On spawn le GO*/
+	if(!pGameObj->Create(objmgr.GenerateLowGuid(HIGHGUID_GAMEOBJECT), go_id, map,
+	  pUser->GetPhaseMask(), x, y, z,pUser->GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f, 0, (GOState)1))
+	{
+	  delete pGameObj;
+	  return;
+	}
+	pGameObj->SetUInt32Value(GAMEOBJECT_LEVEL, pUser->getLevel()); // On lui attribue le level du joueur
+	pGameObj->SetRespawnTime(time);
+	pUser->AddGameObject(pGameObj);
+	map->Add(pGameObj);
+	WorldPacket data(SMSG_GAMEOBJECT_SPAWN_ANIM_OBSOLETE, 8);
+	data << uint64(pGameObj->GetGUID());
+	pUser->SendMessageToSet(&data,true);
+	delete result;
+	if (retour == 1)
+	  return;
+	}
+
     SpellCastTargets targets;
     if (!targets.read(&recvPacket, pUser))
         return;
