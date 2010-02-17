@@ -497,6 +497,8 @@ bool ChatHandler::HandleGameObjectTargetCommand(const char* args)
 
     PSendSysMessage(LANG_GAMEOBJECT_DETAIL, lowguid, goI->name, lowguid, id, x, y, z, mapid, o);
 
+    m_session->GetPlayer()->SetSelectedObject(lowguid);
+
     if(target)
     {
         time_t curRespawnDelay = target->GetRespawnTimeEx()-time(NULL);
@@ -516,12 +518,18 @@ bool ChatHandler::HandleGameObjectDeleteCommand(const char* args)
 {
     // number or [name] Shift-click form |color|Hgameobject:go_guid|h[name]|h|r
     char* cId = extractKeyFromLink((char*)args,"Hgameobject");
-    if(!cId)
-        return false;
+    if(!cId && m_session->GetPlayer()->GetSelectedObject() == 0)
+	{
+		PSendSysMessage(LANG_COMMAND_NOSELOBJ);
+		return true;
+	}
 
-    uint32 lowguid = atoi(cId);
-    if(!lowguid)
-        return false;
+    uint32 lowguid = 0;
+	if(!cId && m_session->GetPlayer()->GetSelectedObject() != 0)
+		lowguid =  m_session->GetPlayer()->GetSelectedObject();
+
+	if(cId)
+		lowguid = atoi(cId);
 
     GameObject* obj = NULL;
 
@@ -555,6 +563,7 @@ bool ChatHandler::HandleGameObjectDeleteCommand(const char* args)
     obj->DeleteFromDB();
 
     PSendSysMessage(LANG_COMMAND_DELOBJMESSAGE, obj->GetGUIDLow());
+	m_session->GetPlayer()->SetSelectedObject(0);
 
     return true;
 }
@@ -761,6 +770,7 @@ bool ChatHandler::HandleGameObjectAddCommand(const char* args)
     sObjectMgr.AddGameobjectToGrid(db_lowGUID, sObjectMgr.GetGOData(db_lowGUID));
 
     PSendSysMessage(LANG_GAMEOBJECT_ADD,id,gInfo->name,db_lowGUID,x,y,z);
+	m_session->GetPlayer()->SetSelectedObject(db_lowGUID);
     return true;
 }
 
