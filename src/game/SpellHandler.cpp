@@ -131,7 +131,7 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 
 	Map *map = pUser->GetMap(); // La maps ou sera pop le GO
 	/*On spawn le GO*/
-	if(!pGameObj->Create(objmgr.GenerateLowGuid(HIGHGUID_GAMEOBJECT), go_id, map,
+	if(!pGameObj->Create(sObjectMgr.GenerateLowGuid(HIGHGUID_GAMEOBJECT), go_id, map,
 	  pUser->GetPhaseMask(), x, y, z,pUser->GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f, 0, (GOState)1))
 	{
 	  delete pGameObj;
