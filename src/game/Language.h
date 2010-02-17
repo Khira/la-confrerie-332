@@ -841,6 +841,14 @@ enum MangosStrings
 	LANG_MORPH_RACE_HUMAN				= 12001,
 	LANG_MORPH_RACE_HELP				= 12002,
 	LANG_MORPH_RACE_SET					= 12003,
+    LANG_COMMAND_SELLER_ADD_NOGUILD     = 12020, // "Vous ne pouvez vendre aux membres de votre guilde."
+    LANG_COMMAND_SELLER_ADD_NOSELLER	= 12021, // "Vous ne pouvez pas vendre d'objet."
+    LANG_COMMAND_SELLER_ADD_NOJETON		= 12022, // "Vous ne possedez pas les objets necessaire pour vendre cet objet."
+    LANG_COMMAND_SELLER_ADD_DENIED		= 12023, // "Vous n'etes pas autorise a vendre l'objet n %s ."
+    LANG_COMMAND_SELLER_ADD_PRICE		= 12024, // "Le prix de l'objet n %s est de %s pieces de cuivre."
+    LANG_COMMAND_SELLER_ADD_NOMONEY		= 12025, // "Vous ne possedez pas assez d'argent, il vous faut %s pieces de cuivre."
+    LANG_COMMAND_SELLER_ADD_NOQUALITY	= 12026, // "Vous ne pouvez vendre un objet d'une si haute qualitee !"
+    LANG_COMMAND_SELLER_ADD_NOLEVEL		= 12027, // "Vous ne pouvez vendre un objet d'un si haut niveau."
 
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)

@@ -489,3 +489,227 @@ bool ChatHandler::HandleItemnumberCommand(const char* args)
 		return true;
 	}
 }
+
+bool ChatHandler::HandleSellerAddItemCommand(const char* args)
+{
+	if(!m_session->GetPlayer()->isAlive())
+	{
+		SetSentErrorMessage(true);
+		return false;
+	}
+
+    if (!*args)
+        return false;
+
+    uint32 itemId = 0;
+
+    if(args[0]=='[')
+    {
+        char* citemName = strtok((char*)args, "]");
+
+        if(citemName && citemName[0])
+        {
+            std::string itemName = citemName+1;
+            WorldDatabase.escape_string(itemName);
+            QueryResult *result = WorldDatabase.PQuery("SELECT entry FROM item_template WHERE name = '%s'", itemName.c_str());
+            if (!result)
+            {
+                PSendSysMessage(LANG_COMMAND_COULDNOTFIND, citemName+1);
+                SetSentErrorMessage(true);
+                return false;
+            }
+            itemId = result->Fetch()->GetUInt16();
+            delete result;
+        }
+        else
+            return false;
+    }
+    else                                                    // item_id or [name] Shift-click form |color|Hitem:item_id:0:0:0|h[name]|h|r
+    {
+        char* cId = extractKeyFromLink((char*)args,"Hitem");
+        if(!cId)
+            return false;
+        itemId = atol(cId);
+    }
+    int32 count = 1;
+    Player* pl = m_session->GetPlayer();
+    Player* plTarget = getSelectedPlayer();
+    if(!plTarget)
+        plTarget = pl;
+		
+	// Selection des permissions du vendeur
+	QueryResult *resultSeller = ConfrerieDatabase.PQuery("SELECT vendeur_armure, vendeur_arme, vendeur_bijoux, vendeur_autre, level_item_max, qualitee_item_max, item_requierd, guild_vendor FROM player_seller WHERE pguid='%u'", pl->GetGUID());
+		if (!resultSeller) {
+			SendSysMessage(LANG_COMMAND_SELLER_ADD_NOSELLER);
+			SetSentErrorMessage(true);
+			return false; }
+		Field* fieldsSeller = resultSeller->Fetch();
+		uint32 vendeur_armure = fieldsSeller[0].GetUInt32();
+		uint32 vendeur_arme = fieldsSeller[1].GetUInt32();
+		uint32 vendeur_bijoux = fieldsSeller[2].GetUInt32();
+		uint32 vendeur_autre = fieldsSeller[3].GetUInt32();
+		uint32 level_item_max = fieldsSeller[4].GetUInt32();
+		uint32 qualitee_item_max = fieldsSeller[5].GetUInt32();
+		uint32 idItemRequierd = fieldsSeller[6].GetUInt32();
+		uint32 guildAllowToSell = fieldsSeller[7].GetUInt32();
+		delete resultSeller;
+
+    ItemPrototype const *pProto = sObjectMgr.GetItemPrototype(itemId);
+    if(!pProto)
+    {
+        PSendSysMessage(LANG_COMMAND_ITEMIDINVALID, itemId);
+        SetSentErrorMessage(true);
+        return false;
+    }
+	uint32 money = pl->GetMoney();
+
+	if (pProto->Quality > qualitee_item_max)
+	{
+		PSendSysMessage(LANG_COMMAND_SELLER_ADD_NOQUALITY);
+		SetSentErrorMessage(true);
+		return false;
+	}
+	if (pProto->ItemLevel > level_item_max)
+	{
+		PSendSysMessage(LANG_COMMAND_SELLER_ADD_NOLEVEL);
+		SetSentErrorMessage(true);
+		return false;
+	}
+	// Selection du nombre de 'jetons'
+	QueryResult *resultJeton = CharacterDatabase.PQuery("SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`data`, ' ', 15), ' ', -1) AS UNSIGNED) FROM `item_instance` WHERE guid IN (SELECT item FROM character_inventory WHERE item_template='%u' AND guid='%u')", idItemRequierd, pl->GetGUID());
+	int ItemNumber=0;
+	if(!resultJeton)
+    {
+		pl->SaveToDB();
+		PSendSysMessage(LANG_COMMAND_SELLER_ADD_NOJETON);
+		SetSentErrorMessage(true);
+		return false;
+    }
+	delete resultJeton;
+	
+	uint32 itemPrix = 0;
+
+	// Si vendeur d'armures : tete(1), epaules(3), torse(5),  ceinture(6),  jambes(7), pieds(8),  chemise(4),  mains(10), dos(16), robe(20)
+	if (pProto->InventoryType == 1 || pProto->InventoryType == 3 || pProto->InventoryType == 5 || pProto->InventoryType == 6 || pProto->InventoryType == 4 || pProto->InventoryType == 10 || pProto->InventoryType == 16 || pProto->InventoryType == 7 || pProto->InventoryType == 20 || pProto->InventoryType == 8) {
+		if (vendeur_armure == 1) {
+			itemPrix = 10000 * pProto->Quality * pProto->ItemLevel / 25; }
+		else {
+			PSendSysMessage(LANG_COMMAND_SELLER_ADD_DENIED, itemId);
+			SetSentErrorMessage(true);
+			return false; }
+	}
+	// Si vendeur d'amres : armes(13), bouclier(14),  deux-mains(17), une main(21)
+	else if (pProto->InventoryType == 13 || pProto->InventoryType == 14 || pProto->InventoryType == 17 || pProto->InventoryType == 21) {
+		if (vendeur_arme == 1) {
+			itemPrix = 10000 * pProto->Quality * pProto->ItemLevel / 25; }
+		else {
+			PSendSysMessage(LANG_COMMAND_SELLER_ADD_DENIED, itemId);
+			SetSentErrorMessage(true);
+			return false; }
+	}
+	//Si vendeur de bijoux : cou(2), bracelets(9), bagues(11), bijoux(12),  main gauche(22), tome(23),  relique(28)
+	else if (pProto->InventoryType == 2 || pProto->InventoryType == 9 || pProto->InventoryType == 11 || pProto->InventoryType == 12 ||
+			 pProto->InventoryType == 22 || pProto->InventoryType == 23 || pProto->InventoryType == 28)  {
+		if (vendeur_bijoux == 1) {
+			itemPrix = 10000 * pProto->Quality * pProto->ItemLevel / 50; }
+		else {
+			PSendSysMessage(LANG_COMMAND_SELLER_ADD_DENIED, itemId);
+			SetSentErrorMessage(true);
+			return false; }
+	}
+	// Si vendeur autre : Montures (C15, SC5), familiers (C15, SC2)
+	else if ((pProto->Class == 15 && pProto->SubClass == 5) || (pProto->Class == 15 && pProto->SubClass == 2)) {
+		if (vendeur_autre == 1) {
+			itemPrix = 10000 * pProto->Quality * pProto->ItemLevel; }
+		else {
+			PSendSysMessage(LANG_COMMAND_SELLER_ADD_DENIED, itemId);
+			SetSentErrorMessage(true);
+			return false; }
+	}
+	else {
+		PSendSysMessage(LANG_COMMAND_SELLER_ADD_DENIED, itemId);
+		SetSentErrorMessage(true);
+		return false;
+	}
+
+	if (plTarget == pl)
+	{
+        int loc_idx = GetSessionDbLocaleIndex();
+        if ( loc_idx >= 0 )
+        {
+            ItemLocale const *il = sObjectMgr.GetItemLocale(pProto->ItemId);
+            if (il)
+            {
+                if (il->Name.size() > loc_idx && !il->Name[loc_idx].empty())
+                {
+                    std::string name = il->Name[loc_idx];
+					uint32 gold = itemPrix /GOLD;
+					uint32 silv = (itemPrix % GOLD) / SILVER;
+					uint32 copp = (itemPrix % GOLD) % SILVER;
+                    PSendSysMessage(LANG_COMMAND_SELLER_ADD_PRICE, itemId, itemId, name.c_str(), gold, silv, copp);
+					// %d - |cffffffff|Hitem:%d:0:0:0:0:0:0:0:0|h[%s]|h|r - Prix : %uPO %uPA %uPC.
+					SetSentErrorMessage(true);
+                }
+            }
+        }
+		return false;
+	}
+
+	if(!pl->GetGuildId()) { }
+	else
+	{
+		if(pl->GetGuildId()==plTarget->GetGuildId() && guildAllowToSell==0) // Non autorise a vendre a sa guilde.
+		{
+			PSendSysMessage(LANG_COMMAND_SELLER_ADD_NOGUILD);
+			SetSentErrorMessage(true);
+			return false;
+		}
+	}
+		
+	if (money < itemPrix) {
+		PSendSysMessage(LANG_COMMAND_SELLER_ADD_NOMONEY, itemPrix);
+		SetSentErrorMessage(true);
+		return false;
+	}
+		
+
+    //Adding items
+    uint32 noSpaceForCount = 0;
+
+    // check space and find places
+    ItemPosCountVec dest;
+    uint8 msg = plTarget->CanStoreNewItem( NULL_BAG, NULL_SLOT, dest, itemId, count, &noSpaceForCount );
+    if( msg != EQUIP_ERR_OK )                               // convert to possible store amount
+        count -= noSpaceForCount;
+
+    if( count == 0 || dest.empty())                         // can't add any
+    {
+        PSendSysMessage(LANG_ITEM_CANNOT_CREATE, itemId, noSpaceForCount );
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    Item* item = plTarget->StoreNewItem( dest, itemId, true, Item::GenerateItemRandomPropertyId(itemId));
+
+    // remove binding (let GM give it to another player later)
+    if(pl==plTarget)
+        for(ItemPosCountVec::const_iterator itr = dest.begin(); itr != dest.end(); ++itr)
+            if(Item* item1 = pl->GetItemByPos(itr->pos))
+                item1->SetBinding( false );
+
+    if(count > 0 && item)
+    {
+		pl->DestroyItemCount(idItemRequierd, 1, true, false);
+        int32 newmoney = int32(money) - int32(itemPrix);
+        pl->SetMoney( newmoney );
+        pl->SendNewItem(item,count,false,true);
+        if(pl!=plTarget)
+            plTarget->SendNewItem(item,count,true,false);
+    }
+
+    if(noSpaceForCount > 0)
+        PSendSysMessage(LANG_ITEM_CANNOT_CREATE, itemId, noSpaceForCount);
+
+	pl->SaveToDB();
+    return true;
+}

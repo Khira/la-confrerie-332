@@ -512,6 +512,7 @@ class ChatHandler
 
 		bool HandleMorphCommand(const char* args);
 		bool HandleItemnumberCommand(const char* args);
+		bool HandleSellerAddItemCommand(const char* args);
 
         //! Development Commands
         bool HandleSaveAllCommand(const char* args);

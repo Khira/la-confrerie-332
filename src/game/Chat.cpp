@@ -681,6 +681,7 @@ ChatCommand * ChatHandler::getCommandTable()
 
 		{ "morph",          SEC_PLAYER,         false, &ChatHandler::HandleMorphCommand,               "", NULL },
 		{ "itemnumber",     SEC_MODERATOR,      false, &ChatHandler::HandleItemnumberCommand,          "", NULL },
+		{ "sadditem",       SEC_PLAYER,         false, &ChatHandler::HandleSellerAddItemCommand,       "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
