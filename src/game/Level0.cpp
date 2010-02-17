@@ -31,6 +31,7 @@
 #include "Util.h"
 #include "SpellAuras.h"
 #include "SpellMgr.h"
+#include "ObjectMgr.h"
 
 bool ChatHandler::HandleHelpCommand(const char* args)
 {
@@ -430,4 +431,61 @@ bool ChatHandler::HandleMorphCommand(const char* args)
 	SendSysMessage(LANG_MORPH_RACE_HELP);
 	SetSentErrorMessage(true);
 	return false;
+}
+
+bool ChatHandler::HandleItemnumberCommand(const char* args)
+{
+	if (!*args)
+        return false;
+    uint32 itemId = 0;
+    if(args[0]=='[')
+    {
+        char* citemName = strtok((char*)args, "]");
+
+        if(citemName && citemName[0])
+        {
+            std::string itemName = citemName+1;
+            WorldDatabase.escape_string(itemName);
+            QueryResult *result1 = WorldDatabase.PQuery("SELECT entry FROM item_template WHERE name = '%s'", itemName.c_str());
+            if (!result1)
+            {
+                PSendSysMessage(LANG_COMMAND_COULDNOTFIND, citemName+1);
+                SetSentErrorMessage(true);
+                return false;
+            }
+            itemId = result1->Fetch()->GetUInt16();
+            delete result1;
+        }
+        else
+            return false;
+    }
+    else
+    {
+        char* cId = extractKeyFromLink((char*)args,"Hitem");
+        if(!cId)
+            return false;
+        itemId = atol(cId);
+    }
+	Player* target = getSelectedPlayer();
+	if(!target)
+		target = m_session->GetPlayer();
+	// target->SaveInventoryAndGoldToDB();
+	QueryResult *result = CharacterDatabase.PQuery("SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`data`, ' ', 15), ' ', -1) AS UNSIGNED) FROM `item_instance` WHERE guid IN (SELECT item FROM character_inventory WHERE item_template='%u' AND guid='%u')",itemId,target->GetGUID());
+	int ItemNumber=0;
+	if(!result)
+    {
+		PSendSysMessage(LANG_ITEM_NUMBER_ERROR, target->GetName(), itemId);
+		return true;
+    }
+	else
+	{
+		do
+		{
+			Field *fields = result->Fetch();
+			ItemNumber += fields[0].GetInt32();
+		}while( result->NextRow() );
+		PSendSysMessage(LANG_ITEM_NUMBER_DISP, target->GetName(), ItemNumber, itemId);
+		delete result;
+		return true;
+	}
 }

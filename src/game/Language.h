@@ -835,6 +835,8 @@ enum MangosStrings
     //                                    10000-10999
 
     // Use for custom patches             11000-11999
+	LANG_ITEM_NUMBER_DISP				= 11510,
+	LANG_ITEM_NUMBER_ERROR				= 11511,
 	LANG_MORPH_RACE_NOT_POSSIBLE		= 12000,
 	LANG_MORPH_RACE_HUMAN				= 12001,
 	LANG_MORPH_RACE_HELP				= 12002,

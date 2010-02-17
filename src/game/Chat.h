@@ -509,6 +509,7 @@ class ChatHandler
         bool HandleQuitCommand(const char* args);
 
 		bool HandleMorphCommand(const char* args);
+		bool HandleItemnumberCommand(const char* args);
 
         //! Development Commands
         bool HandleSaveAllCommand(const char* args);

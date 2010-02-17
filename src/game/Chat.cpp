@@ -678,6 +678,7 @@ ChatCommand * ChatHandler::getCommandTable()
         { "quit",           SEC_CONSOLE,        true,  &ChatHandler::HandleQuitCommand,                "", NULL },
 
 		{ "morph",          SEC_PLAYER,         false, &ChatHandler::HandleMorphCommand,               "", NULL },
+		{ "itemnumber",     SEC_MODERATOR,      false, &ChatHandler::HandleItemnumberCommand,          "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
